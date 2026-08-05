@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, KeyRound, Building, Users, Lock, ChevronDown, ChevronUp, Edit2, Check, Loader2, Mail, Phone, MapPin, Save } from 'lucide-react';
+import { X, User, Building, Users, Lock, ChevronDown, ChevronUp, Edit2, Check, Loader2, Mail, Phone, MapPin, Save } from 'lucide-react';
 import api from '../utils/api';
 
 interface ProfileSummary {
