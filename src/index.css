@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@theme {
+  /* Core backgrounds mapped to light-mode */
+  --color-slate-950: #f8fafc; /* Main application background */
+  --color-slate-900: #ffffff; /* Card, sidebar, header backgrounds */
+  --color-slate-850: #f1f5f9; /* Table headers, inactive tabs/badges */
+  --color-slate-805: #f1f5f9; /* Occupancy bar track */
+  
+  /* Borders and dividers */
+  --color-slate-800: #e2e8f0; /* Standard borders */
+  --color-slate-750: #cbd5e1; /* Hover borders */
+
+  /* Typography and texts */
+  --color-slate-100: #020617; /* Core dark titles - black */
+  --color-slate-200: #090d16; /* Body headings - very dark slate */
+  --color-slate-250: #0f172a; /* Base text color - dark charcoal */
+  --color-slate-300: #1e293b; /* Muted texts - slate-800 */
+  --color-slate-350: #1e293b; /* Soft labels - slate-800 */
+  --color-slate-400: #334155; /* slate-700 */
+  --color-slate-450: #334155; /* Muted icons/placeholders - slate-700 */
+  --color-slate-500: #475569; /* slate-600 */
+  --color-slate-550: #94a3b8; /* Input placeholder color */
+  --color-slate-600: #cbd5e1;
+  --color-slate-650: #e2e8f0;
+
+  /* Rich Light Mode Colors */
+  --color-blue-400: #1d4ed8;     /* Vibrant blue accent (blue-700) */
+  --color-emerald-400: #047857;  /* High-contrast emerald (emerald-700) */
+  --color-rose-400: #b91c1c;     /* High-contrast rose (rose-700) */
+  --color-amber-400: #b45309;    /* High-contrast amber (amber-700) */
+
+  --color-emerald-300: #065f46;  /* Deep emerald for text (emerald-800) */
+  --color-rose-300: #991b1b;     /* Deep rose for text (rose-800) */
+  --color-amber-300: #92400e;    /* Deep amber for text (amber-800) */
+}
+
+/* Custom scrollbars and styling tweaks */
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 600; /* Bolder default font weight */
+  }
+
+  /* Make default elements bolder globally for high readability */
+  p, span, label, td, th, input, select, textarea, button, a {
+    font-weight: 600 !important; /* Semi-bold */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 800 !important; /* Extra bold */
+  }
+}
+
+/* Custom transitions and glassmorphism helpers in light mode */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* --- Theme Overrides for Text & Buttons --- */
+
+/* Force text-white class to render as charcoal color by default on light backgrounds */
+.text-white {
+  color: #0f172a !important;
+}
+
+/* Maintain crisp white text on colored link buttons and active states */
+.bg-blue-600 .text-white,
+.bg-blue-600.text-white,
+.bg-emerald-600.text-white,
+.bg-rose-600.text-white,
+.bg-amber-600.text-white,
+.bg-indigo-600.text-white,
+.bg-blue-500 .text-white,
+.bg-blue-500.text-white,
+.bg-indigo-500 .text-white,
+.bg-indigo-500.text-white,
+.bg-emerald-500 .text-white,
+.bg-emerald-500.text-white,
+.bg-rose-500 .text-white,
+.bg-rose-500.text-white,
+.bg-amber-500 .text-white,
+.bg-amber-500.text-white,
+button.bg-blue-600,
+button.bg-emerald-600,
+button.bg-rose-600,
+button.bg-amber-600,
+button.bg-slate-800,
+button.bg-slate-850,
+button.bg-emerald-500,
+a.bg-blue-600,
+span.text-blue-300 {
+  color: #ffffff !important;
+}
+
+/* Inputs and interactive selects text override */
+input, select, textarea {
+  color: #0f172a !important;
+}
+
+/* --- Responsive & Animation Utilities --- */
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Force all text inputs, textareas, and dropdown selections to render in uppercase */
+input[type="text"]:not([type="email"]):not([name*="email"]):not(.normal-case), 
+textarea:not(.normal-case), 
+select:not(.normal-case) {
+  text-transform: uppercase !important;
+}
+
+input::placeholder, 
+textarea::placeholder {
+  text-transform: none !important;
+}
+
+/* Style guest names, room type/details, and notes to render uppercase globally */
+.guest-name, 
+.room-number, 
+.room-type, 
+.booking-number, 
+.reg-number, 
+.invoice-number,
+.city-display,
+.state-display,
+.country-display,
+.address-display {
+  text-transform: uppercase !important;
+}
+
