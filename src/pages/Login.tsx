@@ -88,7 +88,7 @@ const Login: React.FC<{ initialMode?: 'login' | 'register' }> = ({ initialMode =
         <div className="absolute -top-12 -left-12 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
 
         <div className="text-center mb-6 flex flex-col items-center">
-          <img src="/logo.png" alt="EazyCheck Logo" className="h-16 w-auto object-contain mb-3" />
+          <img src="/logo.png?v=2" alt="EazyCheck Logo" className="h-16 w-auto object-contain mb-3" />
           <p className="text-sm text-slate-400">Enterprise Multi-Tenant Stay & Booking System</p>
         </div>
 
