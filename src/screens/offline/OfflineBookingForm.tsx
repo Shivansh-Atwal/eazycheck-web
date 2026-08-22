@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { BookingStatus, SelectedRoom } from '@core/index';
 import { BookingRepository, TxtBackupService } from '@core/index';
 import { useApp } from '../../context/AppContext';
-import { BOOKING_STATUS } from '@core/constants';
+import { BOOKING_STATUS, INDIAN_STATES_AND_UTS as indianStates } from '@core/constants';
+import citiesData from '../../utils/cities.json';
 
 interface OfflineBookingFormState {
   customerName: string;
@@ -242,7 +243,12 @@ export function OfflineBookingForm() {
 
         <div className="form-group">
           <label className="label">State</label>
-          <input className="input" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="e.g. Maharashtra" />
+          <select className="input" style={{ appearance: 'none', cursor: 'pointer' }} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })}>
+            <option value="">Select State</option>
+            {indianStates.map((s: string) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

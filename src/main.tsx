@@ -19,7 +19,6 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       retry: 1,
       staleTime: 0,
-      refetchInterval: 5000, // Continuous background updates every 5 seconds
     },
   },
 });

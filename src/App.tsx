@@ -6,6 +6,7 @@ import { SyncManager } from './services/SyncManager';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import api from './utils/api';
 import ProfileModal from './components/ProfileModal';
+import { useRealTimeSync } from './hooks/useRealTimeSync';
 
 // Online Screens (cloned from checkin-web)
 import Login from './pages/Login';
@@ -288,14 +289,13 @@ const App: React.FC = () => {
     initialize();
   }, [initialize]);
 
+  // Connect to SSE real-time updates
+  useRealTimeSync();
+
   // Synchronizer triggers: run sync Push and Pull automatically when online
   React.useEffect(() => {
     if (isOnline && isAuthenticated) {
       SyncManager.syncAll();
-      const interval = setInterval(() => {
-        SyncManager.syncAll();
-      }, 15000); // 15s interval background polling
-      return () => clearInterval(interval);
     }
   }, [isOnline, isAuthenticated]);
 

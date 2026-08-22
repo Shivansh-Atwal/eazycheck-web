@@ -2,14 +2,20 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
-import { Map, TrendingUp, Calendar, Bed, Users, ClipboardList } from 'lucide-react';
+import { Map, TrendingUp, Calendar, Bed, Users, ClipboardList, DownloadCloud } from 'lucide-react';
 import { formatDate } from '../utils/dateFormatter';
 import { downloadTextFile } from '../utils/download';
+import * as XLSX from 'xlsx';
 
 interface StateWiseSummary {
   state: string;
   customers: number;
   bednights: number;
+  areas?: {
+    city: string;
+    customers: number;
+    bednights: number;
+  }[];
 }
 
 interface TodaySummary {
@@ -33,6 +39,7 @@ const Reports: React.FC = () => {
   // Initialize dates to empty strings so the user is forced to select them first
   const [startDate, setStartDate] = React.useState('');
   const [endDate, setEndDate] = React.useState('');
+  const [revenueStateFilter, setRevenueStateFilter] = React.useState('');
 
   const [revenueData, setRevenueData] = React.useState<{
     totalRevenue: number;
@@ -50,9 +57,18 @@ const Reports: React.FC = () => {
   const [revenueError, setRevenueError] = React.useState<string | null>(null);
 
   // Fetch reports data
-  const { data: reportsRes, isLoading: reportsLoading } = useQuery({
+  const { data: reportsRes, isLoading: reportsLoading, refetch: refetchReports } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => api.get('/admin/reports').then((res) => res.data),
+    queryFn: () => {
+      const stateQuery = revenueStateFilter ? `&state=${encodeURIComponent(revenueStateFilter)}` : '';
+      let dateQuery = '';
+      if (startDate && endDate) {
+        dateQuery = `?startDate=${startDate}&endDate=${endDate}${stateQuery}`;
+      } else if (stateQuery) {
+        dateQuery = `?${stateQuery.substring(1)}`;
+      }
+      return api.get(`/admin/reports${dateQuery}`).then((res) => res.data);
+    },
   });
 
   const reportData: ReportsData = reportsRes?.data || {
@@ -73,9 +89,11 @@ const Reports: React.FC = () => {
     setRevenueLoading(true);
     setRevenueError(null);
     try {
-      const res = await api.get(`/admin/revenue-report?startDate=${startDate}&endDate=${endDate}`);
+      const stateQuery = revenueStateFilter ? `&state=${encodeURIComponent(revenueStateFilter)}` : '';
+      const res = await api.get(`/admin/revenue-report?startDate=${startDate}&endDate=${endDate}${stateQuery}`);
       if (res.data && res.data.success) {
         setRevenueData(res.data.data);
+        await refetchReports(); // Also update state-wise records with new filters
       } else {
         setRevenueError('Failed to fetch revenue data.');
       }
@@ -101,6 +119,59 @@ const Reports: React.FC = () => {
     await downloadTextFile('eazycheck_state_wise_report.csv', csvContent);
   };
 
+  const handleExportExcel = () => {
+    if (!reportData.detailedRecords?.length) {
+      alert('No detailed records available to export.');
+      return;
+    }
+    
+    // Format data for Excel
+    const dataToExport = reportData.detailedRecords.map(record => ({
+      'Guest Name': record.customerName,
+      'Mobile Number': record.mobileNumber || 'N/A',
+      'Check-in Date': formatDate(record.checkInTime),
+      'Checkout Date': record.actualCheckOutTime ? formatDate(record.actualCheckOutTime) : 'Not Checked Out',
+      'Nights Spent': Math.max(1, Math.ceil(record.bednights / record.numberOfGuests)),
+      'Total Bednights': record.bednights,
+      'State': record.state,
+      'Address': record.completeAddress,
+      'ID Type': record.idCardType,
+      'ID Number': record.idCardNumber,
+      'Room Number(s)': record.roomNumber,
+      'Price Per Night (₹)': record.roomPrice,
+      'Status': record.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Detailed Stays');
+    
+    // Also include a summary sheet
+    if (reportData.stateWiseData?.length) {
+      const summaryRows: any[] = [];
+      reportData.stateWiseData.forEach(s => {
+        summaryRows.push({
+          'State / Area': `[STATE] ${s.state}`,
+          'Total Guests': s.customers,
+          'Total Bednights': s.bednights
+        });
+        if (s.areas && s.areas.length > 0) {
+          s.areas.forEach(area => {
+            summaryRows.push({
+              'State / Area': `    ↳ ${area.city}`,
+              'Total Guests': area.customers,
+              'Total Bednights': area.bednights
+            });
+          });
+        }
+      });
+      const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'State & Area Summary');
+    }
+
+    XLSX.writeFile(workbook, `eazycheck_detailed_report_${new Date().getTime()}.xlsx`);
+  };
+
   const isLoading = reportsLoading;
 
   return (
@@ -117,6 +188,13 @@ const Reports: React.FC = () => {
           >
             <Map className="w-4 h-4 mr-2" />
             Export State CSV
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center justify-center px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 hover:border-emerald-500 text-emerald-400 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+          >
+            <DownloadCloud className="w-4 h-4 mr-2" />
+            Export Detailed Excel
           </button>
         </div>
       </div>
@@ -200,6 +278,16 @@ const Reports: React.FC = () => {
                 {/* Date Filter Form */}
                 <form onSubmit={handleFetchRevenue} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   <div className="flex items-center bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-300 w-full sm:w-auto justify-center">
+                    <Map className="w-3.5 h-3.5 text-blue-400 shrink-0 mr-2" />
+                    <input
+                      type="text"
+                      placeholder="State (Optional)"
+                      value={revenueStateFilter}
+                      onChange={(e) => setRevenueStateFilter(e.target.value)}
+                      className="bg-transparent text-slate-200 font-semibold outline-none w-full sm:w-28 text-center"
+                    />
+                  </div>
+                  <div className="flex items-center bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-300 w-full sm:w-auto justify-center">
                     <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0 mr-2" />
                     <input
                       type="date"
@@ -282,43 +370,6 @@ const Reports: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Daily Profit Breakdown Table */}
-                  {revenueData.dailyBreakdown && Object.keys(revenueData.dailyBreakdown).length > 0 && (
-                    <div className="mt-8 border-t border-slate-850 pt-6">
-                      <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Daily Profit Breakdown (By Checkout Date)</h4>
-                      <div className="overflow-x-auto rounded-xl border border-slate-800 shadow-sm bg-slate-950/20">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-850/50 border-b border-slate-800 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                              <th className="p-3 pl-4">Date</th>
-                              <th className="p-3 text-right">Room Profit</th>
-                              <th className="p-3 text-right">Extra Charges</th>
-                              <th className="p-3 pr-4 text-right">Total Profit</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-800 text-xs font-semibold text-slate-300">
-                            {Object.values(revenueData.dailyBreakdown)
-                              .filter(day => day.totalRevenue > 0)
-                              .sort((a, b) => a.date.localeCompare(b.date))
-                              .map((day) => (
-                              <tr key={day.date} className="hover:bg-slate-850/30 transition-colors">
-                                <td className="p-3 pl-4 text-slate-200">{formatDate(day.date)}</td>
-                                <td className="p-3 text-right text-blue-400 font-mono">₹{day.roomRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                <td className="p-3 text-right text-indigo-400 font-mono">₹{day.extraChargesRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                <td className="p-3 pr-4 text-right text-emerald-400 font-mono font-bold bg-emerald-900/10">₹{day.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                              </tr>
-                            ))}
-                            {Object.values(revenueData.dailyBreakdown).filter(day => day.totalRevenue > 0).length === 0 && (
-                              <tr>
-                                <td colSpan={4} className="p-6 text-center text-slate-500 font-medium text-xs">No checkout collections found for the selected period.</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

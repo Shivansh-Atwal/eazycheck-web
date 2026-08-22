@@ -28,7 +28,6 @@ interface Booking {
   status: string;
   notes: string;
   customerId: string;
-  roomId: string;
   customer: {
     fullName: string;
     mobileNumber: string;
@@ -45,11 +44,11 @@ interface Booking {
       customerPhotoUrl?: string;
     }>;
   };
-  room: {
+  rooms?: Array<{
     id: string;
     roomNumber: string;
     roomType: string;
-  };
+  }>;
   registrationNumber?: string;
   checkInRecord?: CheckInRecord | null;
 }
@@ -368,7 +367,7 @@ const Bookings: React.FC = () => {
     setState(booking.customer.state || '');
     setCountry(booking.customer.country || '');
     setPincode(booking.customer.pincode || '');
-    setSelectedRoomIds([booking.roomId]);
+    setSelectedRoomIds(booking.rooms?.map(r => r.id) || []);
 
     const getLocalDateString = (dateTimeStr?: string | Date | null) => {
       if (!dateTimeStr) return '';
@@ -777,7 +776,7 @@ const Bookings: React.FC = () => {
             </div>
             <div class="metadata-item">
               <div class="metadata-label">Room Number</div>
-              <div class="metadata-value">Room ${booking.room?.roomNumber || 'N/A'} (${booking.room?.roomType || ''})</div>
+              <div class="metadata-value">Room(s) ${booking.rooms?.map(r => r.roomNumber).join(', ') || 'N/A'}</div>
             </div>
             <div class="metadata-item">
               <div class="metadata-label">Stay Reference / Reg Number</div>
@@ -932,8 +931,8 @@ const Bookings: React.FC = () => {
                     )}
                   </td>
                   <td className="p-4">
-                    <p className="font-mono font-bold text-white">Room {booking.room?.roomNumber}</p>
-                    <p className="text-[10px] text-slate-500 font-mono capitalize">{booking.room?.roomType}</p>
+                    <p className="font-mono font-bold text-white">Room(s) {booking.rooms?.map(r => r.roomNumber).join(', ') || 'N/A'}</p>
+                    <p className="text-[10px] text-slate-500 font-mono capitalize">{booking.rooms?.map(r => r.roomType).join(', ') || 'N/A'}</p>
                   </td>
                   <td className="p-4 space-y-0.5">
                     <p><span className="text-slate-500 font-medium">Arrival:</span> {formatDate(booking.checkInDate)}</p>
@@ -1004,8 +1003,8 @@ const Bookings: React.FC = () => {
               <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-800/80 pt-2.5">
                 <div>
                   <span className="block text-[10px] uppercase text-slate-500 tracking-wider">Room Assigned</span>
-                  <span className="font-mono font-bold text-white">Room {booking.room?.roomNumber}</span>
-                  <span className="block text-[10px] text-slate-500">({booking.room?.roomType})</span>
+                  <span className="font-mono font-bold text-white">Room(s) {booking.rooms?.map(r => r.roomNumber).join(', ') || 'N/A'}</span>
+                  <span className="block text-[10px] text-slate-500">({booking.rooms?.map(r => r.roomType).join(', ') || 'N/A'})</span>
                 </div>
                 <div>
                   <span className="block text-[10px] uppercase text-slate-500 tracking-wider">Room Price</span>

@@ -330,27 +330,10 @@ const Customers: React.FC = () => {
               <div className="p-6 space-y-6">
                 {/* Contact and Demographics */}
                 <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl space-y-3 text-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <span className="text-xs text-slate-500 block">Mobile Number</span>
                       <span className="font-semibold text-slate-200">{selectedCustomer.mobileNumber}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block">Alt Mobile</span>
-                      <span className="font-semibold text-slate-200">{selectedCustomer.alternateNumber || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/60">
-                    <div>
-                      <span className="text-xs text-slate-500 block">Date of Birth</span>
-                      <span className="font-semibold text-slate-200">
-                        {selectedCustomer.dob ? formatDate(selectedCustomer.dob) : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block">Gender</span>
-                      <span className="font-semibold text-slate-200 capitalize">{selectedCustomer.gender || 'N/A'}</span>
                     </div>
                   </div>
 
@@ -430,7 +413,7 @@ const Customers: React.FC = () => {
                           <div key={b.id} className="bg-slate-950/20 border border-slate-850 p-4 rounded-xl flex justify-between items-center text-xs">
                             <div className="space-y-1">
                               <p className="font-semibold text-slate-200">
-                                Room {b.rooms?.map((r: any) => r.roomNumber).join(', ') || 'N/A'}
+                                Room(s) {b.rooms?.map((r: any) => r.roomNumber).join(', ') || 'N/A'}
                               </p>
                               <p className="text-slate-400">
                                 {formatDate(b.checkInDate)} - {formatDate(b.checkOutDate)}

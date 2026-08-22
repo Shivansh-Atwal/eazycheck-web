@@ -4,8 +4,7 @@ import api, { getBackendUrl } from '../utils/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckSquare, Clock, Calendar, ShieldAlert, Loader2, Camera, Upload, X, RotateCw, Flashlight } from 'lucide-react';
 import citiesData from '../utils/cities.json';
-
-const indianStates = Array.from(new Set(citiesData.map((c: any) => c.state))).sort();
+import { INDIAN_STATES_AND_UTS as indianStates } from '@core/constants';
 
 interface Room {
   id: string;
@@ -191,6 +190,10 @@ const CheckIn: React.FC = () => {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  
+  // OCR states
+  const [ocrScanningFront, setOcrScanningFront] = useState(false);
+  const [ocrScanningBack, setOcrScanningBack] = useState(false);
 
   // Camera Modal states
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -206,6 +209,7 @@ const CheckIn: React.FC = () => {
     setUrl: (url: string) => void;
     setLoading: (load: boolean) => void;
     label: string;
+    side: 'front' | 'back' | 'none';
   } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -288,9 +292,10 @@ const CheckIn: React.FC = () => {
     type: 'documents' | 'customers',
     setUrl: (url: string) => void,
     setLoading: (load: boolean) => void,
-    label: string
+    label: string,
+    side: 'front' | 'back' | 'none' = 'none'
   ) => {
-    setCameraActiveTarget({ type, setUrl, setLoading, label });
+    setCameraActiveTarget({ type, setUrl, setLoading, label, side });
     setCameraOpen(true);
     setTimeout(() => {
       startCamera();
@@ -332,7 +337,7 @@ const CheckIn: React.FC = () => {
         const file = new File([blob], `${cameraActiveTarget.label.replace(/\s+/g, '_')}_captured.jpg`, {
           type: 'image/jpeg',
         });
-        handleFileUpload(file, cameraActiveTarget.type, cameraActiveTarget.setUrl, cameraActiveTarget.setLoading);
+        handleFileUpload(file, cameraActiveTarget.type, cameraActiveTarget.setUrl, cameraActiveTarget.setLoading, cameraActiveTarget.side);
         closeCamera();
       } catch (err) {
         console.error('Error processing captured photo:', err);
@@ -353,9 +358,12 @@ const CheckIn: React.FC = () => {
     file: File,
     type: 'documents' | 'customers',
     setUrl: (url: string) => void,
-    setLoading: (load: boolean) => void
+    setLoading: (load: boolean) => void,
+    side: 'front' | 'back' | 'none' = 'none'
   ) => {
     setLoading(true);
+    let uploadedUrl = '';
+    
     try {
       let fileToUpload = file;
       if (file.type.startsWith('image/')) {
@@ -368,14 +376,56 @@ const CheckIn: React.FC = () => {
 
       const formData = new FormData();
       formData.append('document', fileToUpload);
+      
       const res = await api.post(`/customers/upload?type=${type}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setUrl(res.data.data.fileUrl);
+      
+      uploadedUrl = res.data.data.fileUrl;
+      setUrl(uploadedUrl); // Instantly update UI with uploaded image
+      setLoading(false); // Stop image loading spinner
+      
+      // Fire async OCR if it's an ID side
+      if (side !== 'none') {
+        runAsyncOCR(fileToUpload, side);
+      }
     } catch (err: any) {
       alert(err.response?.data?.error || 'File upload failed.');
-    } finally {
       setLoading(false);
+    }
+  };
+
+  const runAsyncOCR = async (file: File, side: 'front' | 'back') => {
+    if (side === 'front') setOcrScanningFront(true);
+    else setOcrScanningBack(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('imageSide', side);
+      
+      const res = await api.post('/ocr/analyze', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      
+      const { data } = res.data;
+      if (data) {
+        if (side === 'front') {
+          if (data.name && !customerName) setCustomerName(data.name);
+          if (data.idNumber && !idNumber) setIdNumber(data.idNumber);
+          if (data.mobileNumber && !mobileNumber) setMobileNumber(data.mobileNumber);
+        } else if (side === 'back') {
+          if (data.pincode && !pincode) setPincode(data.pincode);
+          if (data.address && !address) setAddress(data.address);
+          if (data.state && !state) setState(data.state);
+        }
+        console.log(`[OCR] Extracted data for ${side}:`, data);
+      }
+    } catch (err) {
+      console.error('Async OCR Failed:', err);
+    } finally {
+      if (side === 'front') setOcrScanningFront(false);
+      else setOcrScanningBack(false);
     }
   };
 
@@ -405,8 +455,8 @@ const CheckIn: React.FC = () => {
   });
 
   const rooms: Room[] = roomsRes?.data || [];
-  const bookingRoomInRooms = bookingRes?.data && rooms.some((r) => r.id === bookingRes.data.roomId);
-  const freeRoomsCount = rooms.length + (bookingId && !bookingRoomInRooms ? 1 : 0);
+  const bookingRoomInRooms = bookingRes?.data?.rooms?.some((br: any) => rooms.some((r) => r.id === br.id));
+  const freeRoomsCount = rooms.length + (bookingId && !bookingRoomInRooms ? (bookingRes?.data?.rooms?.length || 1) : 0);
 
   // Pre-fill form from booking when fetched
   useEffect(() => {
@@ -414,7 +464,7 @@ const CheckIn: React.FC = () => {
       const b = bookingRes.data;
       setCustomerName(b.customer.fullName);
       setMobileNumber(b.customer.mobileNumber);
-      setSelectedRoomIds([b.roomId]);
+      setSelectedRoomIds(b.rooms?.map((r: any) => r.id) || []);
       setNumberOfGuests(b.numberOfGuests);
       setPriceCost(b.price);
       setAdvancePaid(0); // Additional paid on arrival
@@ -780,19 +830,16 @@ const CheckIn: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-450 mb-1.5">State</label>
-                <input
-                  type="text"
-                  list="states-datalist-checkin"
+                <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  placeholder="e.g. Maharashtra"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2.5 px-3.5 text-sm text-white outline-none"
-                />
-                <datalist id="states-datalist-checkin">
-                  {indianStates.map((s) => (
-                    <option key={s} value={s} />
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2.5 px-3.5 text-sm text-white outline-none appearance-none cursor-pointer"
+                >
+                  <option value="">Select State</option>
+                  {indianStates.map((s: string) => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
-                </datalist>
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -866,6 +913,12 @@ const CheckIn: React.FC = () => {
                     >
                       Remove Image
                     </button>
+                    {ocrScanningFront && (
+                      <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-blue-400 font-medium animate-pulse">
+                        <div className="w-3 h-3 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                        Scanning ID for details...
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="w-full text-center py-4 flex flex-col items-center justify-center space-y-3">
@@ -882,14 +935,14 @@ const CheckIn: React.FC = () => {
                           className="hidden"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
-                              handleFileUpload(e.target.files[0], 'documents', setFrontImageUrl, setFrontImageLoading);
+                              handleFileUpload(e.target.files[0], 'documents', setFrontImageUrl, setFrontImageLoading, 'front');
                             }
                           }}
                         />
                       </label>
                       <button
                         type="button"
-                        onClick={() => openCamera('documents', setFrontImageUrl, setFrontImageLoading, 'ID Front Image')}
+                        onClick={() => openCamera('documents', setFrontImageUrl, setFrontImageLoading, 'ID Front Image', 'front')}
                         className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors"
                       >
                         <Camera className="w-3.5 h-3.5 text-blue-500" />
@@ -918,6 +971,12 @@ const CheckIn: React.FC = () => {
                     >
                       Remove Image
                     </button>
+                    {ocrScanningBack && (
+                      <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-blue-400 font-medium animate-pulse">
+                        <div className="w-3 h-3 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                        Scanning Back ID for address...
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="w-full text-center py-4 flex flex-col items-center justify-center space-y-3">
@@ -934,14 +993,14 @@ const CheckIn: React.FC = () => {
                           className="hidden"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
-                              handleFileUpload(e.target.files[0], 'documents', setBackImageUrl, setBackImageLoading);
+                              handleFileUpload(e.target.files[0], 'documents', setBackImageUrl, setBackImageLoading, 'back');
                             }
                           }}
                         />
                       </label>
                       <button
                         type="button"
-                        onClick={() => openCamera('documents', setBackImageUrl, setBackImageLoading, 'ID Back Image')}
+                        onClick={() => openCamera('documents', setBackImageUrl, setBackImageLoading, 'ID Back Image', 'back')}
                         className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors"
                       >
                         <Camera className="w-3.5 h-3.5 text-blue-500" />
