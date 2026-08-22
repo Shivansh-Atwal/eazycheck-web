@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { enqueueOperation, applyOptimisticUpdate } from '../db/offlineQueue';
 
 export const getBackendUrl = (): string => {
-  const envApiUrl = import.meta.env.VITE_API_URL || 'https://checkin-backend-70km.onrender.com/api';
+  const envApiUrl = import.meta.env.VITE_API_URL || 'https://api.eazycheck.in/api';
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
