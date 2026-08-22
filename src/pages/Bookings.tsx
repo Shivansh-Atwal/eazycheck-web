@@ -1371,7 +1371,7 @@ const Bookings: React.FC = () => {
                             <img
                               src={frontImageUrl.startsWith('/') ? `${getBackendUrl()}${frontImageUrl}` : frontImageUrl}
                               alt="ID Front"
-                              className="h-20 mx-auto rounded-lg object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
+                              className="w-32 h-20 mx-auto rounded-lg object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
                               onClick={() => setPreviewImage(frontImageUrl.startsWith('/') ? `${getBackendUrl()}${frontImageUrl}` : frontImageUrl)}
                             />
                             <button
@@ -1413,7 +1413,7 @@ const Bookings: React.FC = () => {
                             <img
                               src={backImageUrl.startsWith('/') ? `${getBackendUrl()}${backImageUrl}` : backImageUrl}
                               alt="ID Back"
-                              className="h-20 mx-auto rounded-lg object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
+                              className="w-32 h-20 mx-auto rounded-lg object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
                               onClick={() => setPreviewImage(backImageUrl.startsWith('/') ? `${getBackendUrl()}${backImageUrl}` : backImageUrl)}
                             />
                             <button
@@ -1457,7 +1457,7 @@ const Bookings: React.FC = () => {
                           <img
                             src={photoUrl.startsWith('/') ? `${getBackendUrl()}${photoUrl}` : photoUrl}
                             alt="Customer Photo"
-                            className="h-20 w-20 rounded-full object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
+                            className="w-16 h-20 rounded-lg object-cover border border-slate-805 cursor-zoom-in hover:opacity-90 transition-opacity"
                             onClick={() => setPreviewImage(photoUrl.startsWith('/') ? `${getBackendUrl()}${photoUrl}` : photoUrl)}
                           />
                           <button

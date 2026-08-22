@@ -712,7 +712,7 @@ const PreviousStay: React.FC = () => {
                   <img
                     src={frontImageUrl.startsWith('/') ? `${getBackendUrl()}${frontImageUrl}` : frontImageUrl}
                     alt="ID Front"
-                    className="h-28 mx-auto rounded-lg object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
+                    className="w-44 h-28 mx-auto rounded-lg object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
                     onClick={() => setPreviewImage(frontImageUrl.startsWith('/') ? `${getBackendUrl()}${frontImageUrl}` : frontImageUrl)}
                   />
                   <button
@@ -764,7 +764,7 @@ const PreviousStay: React.FC = () => {
                   <img
                     src={backImageUrl.startsWith('/') ? `${getBackendUrl()}${backImageUrl}` : backImageUrl}
                     alt="ID Back"
-                    className="h-28 mx-auto rounded-lg object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
+                    className="w-44 h-28 mx-auto rounded-lg object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
                     onClick={() => setPreviewImage(backImageUrl.startsWith('/') ? `${getBackendUrl()}${backImageUrl}` : backImageUrl)}
                   />
                   <button
@@ -820,7 +820,7 @@ const PreviousStay: React.FC = () => {
                   <img
                     src={photoUrl.startsWith('/') ? `${getBackendUrl()}${photoUrl}` : photoUrl}
                     alt="Customer Photo"
-                    className="h-28 w-28 mx-auto rounded-full object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
+                    className="w-24 h-32 mx-auto rounded-lg object-cover border border-slate-800 cursor-zoom-in hover:opacity-90 transition-opacity"
                     onClick={() => setPreviewImage(photoUrl.startsWith('/') ? `${getBackendUrl()}${photoUrl}` : photoUrl)}
                   />
                   <button
