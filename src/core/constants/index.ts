@@ -35,6 +35,7 @@ export const SYNC_STATUS = {
 export const QUEUE_OPERATIONS = {
   CREATE: 'CREATE',
   UPDATE: 'UPDATE',
+  DELETE: 'DELETE',
 } as const;
 
 export const INDIAN_STATES_AND_UTS = [

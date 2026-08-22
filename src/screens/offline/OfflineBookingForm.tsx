@@ -4,7 +4,7 @@ import type { BookingStatus, SelectedRoom } from '@core/index';
 import { BookingRepository, TxtBackupService } from '@core/index';
 import { useApp } from '../../context/AppContext';
 import { BOOKING_STATUS, INDIAN_STATES_AND_UTS as indianStates } from '@core/constants';
-import citiesData from '../../utils/cities.json';
+
 
 interface OfflineBookingFormState {
   customerName: string;

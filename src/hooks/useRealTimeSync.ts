@@ -8,7 +8,7 @@ export const useRealTimeSync = () => {
 
   useEffect(() => {
     let eventSource: EventSource | null = null;
-    let retryTimeout: NodeJS.Timeout;
+    let retryTimeout: ReturnType<typeof setTimeout>;
 
     const connect = () => {
       const backendUrl = getBackendUrl();
